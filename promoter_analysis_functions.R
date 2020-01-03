@@ -1,4 +1,4 @@
-# INPUT: geneids_chrvec - works with entrezIDs. many entrezIDs are not included in txdb object, thus this vector needs to be about twice as long as needed sample size OUTPUT: [[1]] - actual DNAStringSet, [[2]] - logcal vector to subset input based on which entires were excluded
+# INPUT: geneids_chrvec - works with entrezIDs. many entrezIDs are not included in txdb object, thus this vector needs to be about twice as long as needed sample size OUTPUT: [[1]] - actual DNAStringSet, [[2]] - genes used in this DNAStringSet
 get_random_GRangesList_from_txdb <- function(geneids_chrvec, txdb_, sample_size_int, genes_table)
 {
   # This kinna works against 'subscript contains invalid names', I think I can create DNAStringSetList out of notmal list, but perhaps it would be easier to get gene ids from TxDb object?
@@ -14,14 +14,7 @@ get_random_GRangesList_from_txdb <- function(geneids_chrvec, txdb_, sample_size_
       print(paste0(n, ':  ', ex))
     })
   }
-  
-  temp2 <- list()
-  for (m in seq_along(temp)) {
-    if (!is.null(temp[[m]])) {
-      temp2 <- rlist::list.append(temp2, temp[[m]])
-    }
-  }
-  
+
   temp2 <- list()
   for (m in seq_along(temp)) {
     if (!is.null(temp[[m]])) {
@@ -30,7 +23,6 @@ get_random_GRangesList_from_txdb <- function(geneids_chrvec, txdb_, sample_size_
   }
   
   temp_found_genes <- subset(genes_table, found)
-  ### !!! add here zsubsetowac sample_list_for_sampling_distribution[n] (x) za pomocą unlisted_random_promoter_sequences_for_sampling_distribution[n][[2]] (found)
 
   return(list(GenomicRanges::GRangesList(temp2)[1:sample_size_int], temp_found_genes[1:sample_size_int,]))
 }
@@ -46,10 +38,10 @@ get_and_write_gff_from_DNAStringSet_via_JASPAR <- function(DNAStringSet_, input_
   opts[["all_versions"]] <- opts_all_versions
   opts[["matrixtype"]] <- opts_matrixtype
   
-  resulting_PFMatrixList_ <- TFBSTools::getMatrixSet(JASPAR2018::JASPAR2018, opts)
+  resulting_MatrixList_ <- TFBSTools::getMatrixSet(JASPAR2018::JASPAR2018, opts) # This sould fetch proper data, checked with the JASPAR website
   
   # The SiteSet class is a container for storing a set of putative transcription factor binding sites on a nucleotide sequence (start, end, strand, score, pattern as a PWMatrix, etc.) from scaning a nucleotide sequence with the corresponding PWMatrix
-  resulting_SiteSetList_ <- TFBSTools::searchSeq(x = resulting_PFMatrixList_, subject = DNAStringSet_)
+  resulting_SiteSetList_ <- TFBSTools::searchSeq(x = resulting_MatrixList_, subject = DNAStringSet_)
   
   resulting_gff3_of_SiteSetList_ <- TFBSTools::writeGFF3(x = resulting_SiteSetList_, scoreType="relative")
   
@@ -75,7 +67,7 @@ get_promoter_DNAStringSet_with_corresponding_geneNames_after_removal_of_unknown_
              return(NA)
            })
   
-  temp3 <- Biostrings::unstrsplit(temp2)
+  temp3 <- unlist(temp2)
   
   return(list(temp3, temp[[2]]))
 }
